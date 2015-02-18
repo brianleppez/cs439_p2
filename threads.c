@@ -9,10 +9,11 @@
 #define STACK 131072
 
 struct thread {
-	int thread_num;
+	unsigned int thread_num;
+	int scheduled;
 	jmp_buf env;
 	uintptr_t *esp, *ebp;
-	void (*fs)(void *);
+	void CAST(*fs, void *);
 	void *args;
 	struct thread *next;
 };
@@ -33,7 +34,7 @@ uintptr_t sp, bp;
 struct thread *thread_create(void (*f)(void *arg), void *arg) {
 	uintptr_t *memptr;
 	struct thread *process;
-	if (!posix_memalign((void **)&memptr,8,STACK)) {
+	if (!posix_memalign(CAST(void **, &memptr),8,STACK)) {
 		process = TYPED_MALLOC(struct thread);
 		process->ebp = memptr;
 		process->esp = memptr + STACK;
@@ -58,8 +59,28 @@ void thread_add_runqueue(struct thread *t) {
 
 void thread_yield() {
 
-	printf("Thread yielding for thread: %d\n", round_robin->current);
-	if(setjmp(robin->current->env) == 0)
+	printf("Thread yielding for thread: %d\n", round_robin->current->thread_num);
+	if(setjmp(round_robin->current->env) == 0) {
+		schedule();
+		dispatch();
+	}
+}
+
+void dispatch() {
+	if (round_robin->thread_num != 1) {
+		__asm__ volatile("mov %%rax, %%rsp" : : "a" (round_robin->previous->esp));
+		__asm__ volatile("mov %%rax, %%rsp" : : "a" (round_robin->previous->ebp));
+	}
+	if (!round_robin->current->scheduled) {
+		round_robin->current->fs(round_robin->current->args);
+		printf("Thread %d has been changed to scheduled.\n", round_robin->current->thread_num);
+		round_robin->current->fs(robin->current->args);
+	}
+	else {
+		__asm__ volatile("mov %%rsp, %%rax" : "=a" (round_robin->current->esp) :); 
+		__asm__ volatile("mov %%rbp, %%rax" : "=a" (round_robin->current->ebp) :);
+		longjmp(robin->current->env,1);
+	}
 }
 void insert (struct thread* thread) {
 	if(round_robin->first == NULL) {
@@ -76,7 +97,28 @@ void insert (struct thread* thread) {
 		round_robin->previous = t;
 		round_robin->size++;
 	}
+	thread_exit();
 }
+
+void schedule(void) {
+	advance();
+}
+
+void thread_exit() {
+	remove(round_robin->current);
+	if (robin->size > 0)
+		dispatch();
+  	 __asm__ volatile("mov %%rsp, %%rax" : "=a" (sp) :);  
+  	 __asm__ volatile("mov %%rbp, %%rax" : "=a" (bp) :);
+  	 longjmp(env, 1);
+}
+
+void thread_start_threading() {
+	if(setjmp(env) != 0)
+		return;
+	dispatch();
+}
+
 
 void remove (struct thread* t) {
 	struct thread* temp = robin->start;
