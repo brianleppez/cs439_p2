@@ -82,23 +82,7 @@ void dispatch() {
 		longjmp(robin->current->env,1);
 	}
 }
-void insert (struct thread* thread) {
-	if(round_robin->first == NULL) {
-		round_robin->start = t;
-		t->next = t;
-		round_robin->current = t;
-		round_robin->previous = t;
-		round_robin->last = t;
-		round_robin->size = 1;
-	}
-	else {
-		t->next = round_robin->current;
-		round_robin->previous->next = t;
-		round_robin->previous = t;
-		round_robin->size++;
-	}
-	thread_exit();
-}
+
 
 void schedule(void) {
 	advance();
@@ -119,6 +103,23 @@ void thread_start_threading() {
 	dispatch();
 }
 
+void insert (struct thread* t) {
+	if(round_robin->first == NULL) {
+		round_robin->start = t;
+		t->next = t;
+		round_robin->current = t;
+		round_robin->previous = t;
+		round_robin->last = t;
+		round_robin->size = 1;
+	}
+	else {
+		t->next = round_robin->current;
+		round_robin->previous->next = t;
+		round_robin->previous = t;
+		round_robin->size++;
+	}
+	thread_exit();
+}
 
 void remove (struct thread* t) {
 	struct thread* temp = robin->start;
