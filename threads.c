@@ -10,7 +10,7 @@
 
 struct thread {
 	unsigned int thread_num;
-	int scheduled;
+	int dispatched;
 	jmp_buf env;
 	uintptr_t *esp, *ebp;
 	void CAST(*fs, void *);
@@ -71,9 +71,9 @@ void dispatch() {
 		__asm__ volatile("mov %%rax, %%rsp" : : "a" (round_robin->previous->esp));
 		__asm__ volatile("mov %%rax, %%rsp" : : "a" (round_robin->previous->ebp));
 	}
-	if (!round_robin->current->scheduled) {
-		round_robin->current->fs(round_robin->current->args);
-		printf("Thread %d has been changed to scheduled.\n", round_robin->current->thread_num);
+	if (!round_robin->current->dispatched) {
+		round_robin->current->dispatched = 1;
+		printf("Thread %d has been changed to dispatched.\n", round_robin->current->thread_num);
 		round_robin->current->fs(robin->current->args);
 	}
 	else {
@@ -81,10 +81,11 @@ void dispatch() {
 		__asm__ volatile("mov %%rbp, %%rax" : "=a" (round_robin->current->ebp) :);
 		longjmp(robin->current->env,1);
 	}
+	thread_exit();
 }
 
 
-void schedule(void) {
+void schedule() {
 	advance();
 }
 
@@ -118,7 +119,6 @@ void insert (struct thread* t) {
 		round_robin->previous = t;
 		round_robin->size++;
 	}
-	thread_exit();
 }
 
 void remove (struct thread* t) {
@@ -126,13 +126,13 @@ void remove (struct thread* t) {
 	struct thread* dummy = check->next;
 	unsigned int count = 0;
 
-	while (temp != t && loop == 0) {
+	while (dummy != t && count == 0) {
 		temp = dummy;
 		dummy = temp->next;
 		if (temp == round_robin->start)
 			count++;
 	}
-	if (count >= 1) {
+	if (count == 1) {
 		return;
 	}
 	temp->next = dummy->next;
