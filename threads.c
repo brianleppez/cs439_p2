@@ -74,7 +74,7 @@ void t_remove (struct thread* t) {
 void advance() {
 	round_robin->previous = round_robin->current;
 	round_robin->previous->next = round_robin->current->next;
-	printf("current thread is %d\n", round_robin->current->thread_num);
+	// printf("current thread is %d\n", round_robin->current->thread_num);
 }
 
 struct thread *thread_create(void (*f)(void *arg), void *arg) {
@@ -105,7 +105,7 @@ void thread_add_runqueue(struct thread *t) {
 
 void thread_yield(void) {
 
-	printf("Thread yielding for thread: %d\n", round_robin->current->thread_num);
+	// printf("Thread yielding for thread: %d\n", round_robin->current->thread_num);
 	if(setjmp(round_robin->current->env) == 0) {
 		schedule();
 		dispatch();
@@ -119,7 +119,7 @@ void dispatch(void) {
 	}
 	if (!round_robin->current->dispatched) {
 		round_robin->current->dispatched = 1;
-		printf("Thread %d has been changed to dispatched.\n", round_robin->current->thread_num);
+		// printf("Thread %d has been changed to dispatched.\n", round_robin->current->thread_num);
 		round_robin->current->fs(round_robin->current->args);
 	}
 	else {
