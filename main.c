@@ -5,7 +5,7 @@
 void f3(void *arg)
 {
     int i;
-    while (1) {
+    while (i < 50) {
         printf("thread 3: %d\n", i++);
         thread_yield();
     }
@@ -14,11 +14,11 @@ void f3(void *arg)
 void f2(void *arg)
 {
     int i = 0;
-    while(1) {
+    while(i < 10) {
         printf("thread 2: %d\n",i++);
-        if (i == 10) {
-            i = 0;
-        }
+        // if (i == 10) {
+        //     i = 0;
+        // }
         thread_yield();
     }
 }
@@ -30,11 +30,11 @@ void f1(void *arg)
     thread_add_runqueue(t2);
     struct thread *t3 = thread_create(f3, NULL);
     thread_add_runqueue(t3);
-    while(1) {
+    while(i < 110) {
         printf("thread 1: %d\n", i++);
-        if (i == 110) {
-            i = 100;
-        }
+        // if (i == 110) {
+        //     i = 100;
+        // }
         thread_yield();
     }
 }
