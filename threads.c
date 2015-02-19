@@ -11,7 +11,7 @@
 
 struct thread {
 	unsigned int thread_num;
-	int dispatched;
+	unsigned int dispatched;
 	jmp_buf env;
 	uintptr_t *esp, *ebp;
 	void CAST(*fs, void *);
@@ -29,7 +29,7 @@ struct scheduler {
 };
 
 struct scheduler* round_robin;
-int thread_number = 0;
+unsigned int thread_number = 0;
 jmp_buf env;
 uintptr_t sp, bp;
 
@@ -125,7 +125,7 @@ void dispatch(void) {
 	else {
 		__asm__ volatile("mov %%rsp, %%rax" : "=a" (round_robin->current->esp) :); 
 		__asm__ volatile("mov %%rbp, %%rax" : "=a" (round_robin->current->ebp) :);
-		longjmp(round_robin->current->env,1);
+		longjmp(round_robin->current->env, 1);
 	}
 	thread_exit();
 }
