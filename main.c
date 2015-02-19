@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "threads.h"
-#include <setjmp.h>
-#include 
+#include <setjmp.h> 
 
 void f3(void *arg)
 {
