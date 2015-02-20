@@ -7,7 +7,7 @@
 
 #define CAST(t,e) ((t)(e))
 #define TYPED_MALLOC(t) CAST(t*, malloc(sizeof(t)))
-#define STACK 131072
+#define STACK 4096
 
 struct thread {
 	unsigned int thread_num;
@@ -24,7 +24,6 @@ struct scheduler {
 	struct thread* current;
 	struct thread* last;
 	struct thread* first;
-	struct thread* next;
 	struct thread* previous;	
 };
 
@@ -73,7 +72,7 @@ void t_remove (struct thread* t) {
 
 void advance() {
 	round_robin->previous = round_robin->current;
-	round_robin->previous->next = round_robin->current->next;
+	round_robin->current = round_robin->current->next;
 	// printf("current thread is %d\n", round_robin->current->thread_num);
 }
 
@@ -115,7 +114,7 @@ void thread_yield(void) {
 void dispatch(void) {
 	if (round_robin->current->thread_num != 1) {
 		__asm__ volatile("mov %%rax, %%rsp" : : "a" (round_robin->previous->esp));
-		__asm__ volatile("mov %%rax, %%rsp" : : "a" (round_robin->previous->ebp));
+		__asm__ volatile("mov %%rax, %%rbp" : : "a" (round_robin->previous->ebp));
 	}
 	if (!round_robin->current->dispatched) {
 		round_robin->current->dispatched = 1;
